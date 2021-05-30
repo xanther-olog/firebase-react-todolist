@@ -10,8 +10,16 @@ import {
 import React, { useState } from "react";
 import db from "./firebase";
 import DeleteForeverIcon from "@material-ui/icons/DeleteForever";
+import EditIcon from "@material-ui/icons/Edit";
 import { makeStyles } from "@material-ui/core/styles";
 import firebase from "firebase/app";
+import "date-fns";
+import DateFnsUtils from "@date-io/date-fns";
+import {
+  MuiPickersUtilsProvider,
+  KeyboardTimePicker,
+  KeyboardDatePicker,
+} from "@material-ui/pickers";
 
 function rand() {
   return Math.round(Math.random() * 20) - 10;
@@ -43,7 +51,14 @@ export default function TodoComponent(props) {
   const classes = useStyles();
   const [modalStyle] = useState(getModalStyle);
   const [open, setOpen] = useState(false);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(props.item.todo);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date(props.item.deadline.seconds * 1000)
+  );
+
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+  };
   const handleOpen = () => {
     setOpen(true);
   };
@@ -56,7 +71,8 @@ export default function TodoComponent(props) {
     db.collection("todos").doc(props.item.id).set(
       {
         todo: input,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        deadline: selectedDate,
+        updatedOn: firebase.firestore.FieldValue.serverTimestamp(),
       },
       { merge: true }
     );
@@ -66,6 +82,7 @@ export default function TodoComponent(props) {
   return (
     <React.Fragment>
       <div>
+        {/* <Grid container justify="space-evenly" alignContent="center"> */}
         <Modal open={open} onClose={handleClose}>
           <div style={modalStyle} className={classes.paper}>
             <h2> Edit current To-Do </h2>
@@ -74,23 +91,56 @@ export default function TodoComponent(props) {
               value={input}
               onChange={(event) => setInput(event.target.value)}
             />
-            <Button onClick={() => updateTodo()}> Update </Button>
+
+            <MuiPickersUtilsProvider utils={DateFnsUtils}>
+              <KeyboardDatePicker
+                id="date-picker-dialog"
+                label="Deadline Date"
+                format="MM/dd/yyyy"
+                minDate={new Date()}
+                value={selectedDate}
+                onChange={handleDateChange}
+                placeholder={props.item.deadline}
+                KeyboardButtonProps={{
+                  "aria-label": "change date",
+                }}
+              />
+
+              <KeyboardTimePicker
+                id="time-picker"
+                label="Deadline time"
+                value={selectedDate}
+                onChange={handleDateChange}
+                KeyboardButtonProps={{
+                  "aria-label": "change time",
+                }}
+              />
+            </MuiPickersUtilsProvider>
+
+            <Button
+              onClick={() => updateTodo()}
+              disabled={!input || !selectedDate}
+              variant="contained"
+              color="primary"
+            >
+              Update
+            </Button>
           </div>
         </Modal>
-        <List className="todo_list">
+
+        <List className="ListStyles">
           <ListItem>
             <ListItemText
               primary={props.item.todo}
-              secondary="Dummy deadline ⏰⏰"
+              secondary={"" + new Date(props.item.deadline.seconds * 1000)}
             />
-
-            <Button onClick={() => handleOpen()}> Edit </Button>
-
+            <EditIcon onClick={() => handleOpen()} />
             <DeleteForeverIcon
               onClick={() => db.collection("todos").doc(props.item.id).delete()}
             />
           </ListItem>
         </List>
+        {/* </Grid> */}
       </div>
     </React.Fragment>
   );
