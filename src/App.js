@@ -38,9 +38,9 @@ function App() {
       });
   }, []);
 
-  const addTodo = (valueToAdd) => {
+  const addTodo = () => {
     event.preventDefault();
-    setInput([""]);
+    setInput();
     db.collection("todos").add({
       todo: input,
       deadline: selectedDate,
